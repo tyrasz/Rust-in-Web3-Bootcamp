@@ -13,15 +13,21 @@
     "@near-wallet-selector/core": "^7.9.1",
     "@near-wallet-selector/modal-ui": "^7.9.1",
     "@near-wallet-selector/near-wallet": "^7.9.1",
-    "@types/node": "18.15.5",
-    "@types/react": "18.0.28",
-    "@types/react-dom": "18.0.11",
-    "eslint": "8.36.0",
-    "eslint-config-next": "13.2.4",
     "near-api-js": "^1.1.0",
     "next": "13.2.4",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "typescript": "5.0.2"
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "18.15.5",
+    "@types/react": "18.0.28",
+    "@types/react-dom": "18.0.11",
+    "autoprefixer": "^10.4.14",
+    "eslint": "8.36.0",
+    "eslint-config-next": "13.2.4",
+    "prettier": "2.8.7",
+    "typescript": "5.0.2",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.3.0"
   }
 }

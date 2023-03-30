@@ -1,11 +1,11 @@
-import type { ReactNode } from "react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { map, distinctUntilChanged } from "rxjs";
-import { setupWalletSelector } from "@near-wallet-selector/core";
-import type { WalletSelector, AccountState } from "@near-wallet-selector/core";
-import { setupExportSelectorModal } from "@near-wallet-selector/account-export";
-import type { WalletSelectorModal } from "@near-wallet-selector/account-export";
-import { setupNearWallet } from "@near-wallet-selector/near-wallet";
+import type { ReactNode } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { map, distinctUntilChanged } from 'rxjs';
+import { setupWalletSelector } from '@near-wallet-selector/core';
+import type { WalletSelector, AccountState } from '@near-wallet-selector/core';
+import { setupExportSelectorModal } from '@near-wallet-selector/account-export';
+import type { WalletSelectorModal } from '@near-wallet-selector/account-export';
+import { setupNearWallet } from '@near-wallet-selector/near-wallet';
 // import { setupHereWallet } from "@near-wallet-selector/here-wallet";
 // import { setupSender } from "@near-wallet-selector/sender";
 // import { setupMathWallet } from "@near-wallet-selector/math-wallet";
@@ -17,7 +17,7 @@ import { setupNearWallet } from "@near-wallet-selector/near-wallet";
 // import { setupWalletConnect } from "@near-wallet-selector/wallet-connect";
 // import { setupCoin98Wallet } from "@near-wallet-selector/coin98-wallet";
 // import { setupOptoWallet } from "@near-wallet-selector/opto-wallet";
-import { Loading } from "../components/Loading";
+import { Loading } from '../components/Loading';
 // import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 // import { setupLedger } from "@near-wallet-selector/ledger";
 
@@ -47,7 +47,7 @@ export const ExportAccountSelectorContextProvider: React.FC<{
 
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
-      network: "testnet",
+      network: 'testnet',
       debug: true,
       modules: [
         // setupMyNearWallet(),
@@ -89,7 +89,7 @@ export const ExportAccountSelectorContextProvider: React.FC<{
     const _modal = setupExportSelectorModal(_selector, {
       accounts: [],
       onComplete: (completedAccounts) => {
-        console.log("Transfer Completed: ", completedAccounts);
+        console.log('Transfer Completed: ', completedAccounts);
       },
     });
     const state = _selector.store.getState();
@@ -105,7 +105,7 @@ export const ExportAccountSelectorContextProvider: React.FC<{
   useEffect(() => {
     init().catch((err) => {
       console.error(err);
-      alert("Failed to initialise wallet selector");
+      alert('Failed to initialise wallet selector');
     });
   }, [init]);
 
@@ -117,7 +117,7 @@ export const ExportAccountSelectorContextProvider: React.FC<{
     const subscription = importSelector.store.observable
       .pipe(
         map((state) => state.accounts),
-        distinctUntilChanged()
+        distinctUntilChanged(),
       )
       .subscribe((nextAccounts) => {
         setAccounts(nextAccounts);
@@ -152,7 +152,7 @@ export function useExportAccountSelector() {
 
   if (!context) {
     throw new Error(
-      "useExportAccountSelector must be used within a ExportAccountSelectorContextProvider"
+      'useExportAccountSelector must be used within a ExportAccountSelectorContextProvider',
     );
   }
 

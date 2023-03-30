@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use near_sdk::{
     borsh::{self, BorshDeserialize, BorshSerialize},
     env,
@@ -7,8 +5,37 @@ use near_sdk::{
     near_bindgen, require,
     serde::{Deserialize, Serialize},
     store::*,
-    AccountId, BorshStorageKey, Promise,
+    AccountId, BorshStorageKey, Promise, PanicOnDefault,
 };
+use near_sdk_contract_tools::{event, standard::nep297::Event};
+
+#[event(
+    standard = "x-predictions-market",
+    version = "0.1.0",
+    serde = "near_sdk::serde"
+)]
+enum ContractEvent {
+    MarketCreated {
+        market_id: u32,
+        owner: AccountId,
+    },
+    OfferCreated {
+        offer_id: u32,
+        market_id: u32,
+        is_long: bool,
+        account_id: AccountId,
+        amount: U128,
+    },
+    OfferAccepted {
+        offer_id: u32,
+        market_id: u32,
+        account_id: AccountId,
+    },
+    MarketClosed {
+        market_id: u32,
+    },
+    // TODO: Events for credits and withdrawals
+}
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 struct Market {
@@ -29,24 +56,23 @@ pub struct Offer {
     amount: U128,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ViewMarket {
+pub struct ViewMarket<'a> {
     id: u32,
     is_open: bool,
-    description: String,
-    owner: AccountId,
+    description: &'a str,
+    owner: &'a AccountId,
     shares: u32,
 }
 
-impl<T: Borrow<Market>> From<T> for ViewMarket {
-    fn from(value: T) -> Self {
-        let v = value.borrow();
+impl<'a> From<&'a Market> for ViewMarket<'a> {
+    fn from(v: &'a Market) -> Self {
         Self {
             id: v.id,
             is_open: v.is_open,
-            description: v.description.clone(),
-            owner: v.owner.clone(),
+            description: &v.description,
+            owner: &v.owner,
             shares: v.shares.len(),
         }
     }
@@ -59,6 +85,7 @@ struct SharePair {
     amount: U128,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 #[near_bindgen]
 pub struct Contract {
     next_offer_id: u32,
@@ -75,14 +102,6 @@ pub enum StorageKey {
     MarketShares(u32),
 }
 
-// This contract doesn't charge for storage costs!
-// Eventually, if it consumes enough storage, it could become soft-locked
-// until its balance increases or storage usage decreases.
-//
-// Two solutions:
-//  - Implement Storage Management (https://nomicon.io/Standards/StorageManagement)
-//  - Charge for storage as it is used (by taking fees from the attached deposit)
-//      Example: https://docs.rs/near-sdk-contract-tools/latest/near_sdk_contract_tools/utils/fn.apply_storage_fee_and_refund.html
 #[near_bindgen]
 impl Contract {
     #[init]
@@ -97,19 +116,25 @@ impl Contract {
 
     pub fn create_market(&mut self, description: String) -> ViewMarket {
         let id = self.markets.len();
+        let owner = env::predecessor_account_id();
+
         let m = Market {
             id,
             description,
-            owner: env::predecessor_account_id(),
+            owner: owner.clone(),
             is_open: true,
             shares: Vector::new(StorageKey::MarketShares(id)),
         };
 
-        let view_market = (&m).into();
-
         self.markets.push(m);
 
-        view_market
+        ContractEvent::MarketCreated {
+            market_id: id,
+            owner,
+        }
+        .emit();
+
+        self.markets.get(id).unwrap().into()
     }
 
     fn credit_account(&mut self, account_id: AccountId, amount: u128) {
@@ -154,6 +179,8 @@ impl Contract {
             })
             .collect::<Vec<_>>();
 
+        ContractEvent::MarketClosed { market_id }.emit();
+
         drop(market);
 
         for (creditor, amount) in credits {
@@ -163,6 +190,10 @@ impl Contract {
 
     pub fn get_market(&self, market_id: u32) -> Option<ViewMarket> {
         self.markets.get(market_id).map(|m| m.into())
+    }
+
+    pub fn list_markets(&self) -> Vec<ViewMarket> {
+        self.markets.iter().map(|m| m.into()).collect()
     }
 
     pub fn get_offers(&self, market_id: u32) -> Vec<Offer> {
@@ -188,21 +219,31 @@ impl Contract {
 
         let id = self.next_offer_id;
         self.next_offer_id += 1;
+        let account_id = env::predecessor_account_id();
         let o = Offer {
             id,
             is_long,
-            account_id: env::predecessor_account_id(),
+            account_id: account_id.clone(),
             amount: amount.into(),
             market_id,
         };
 
         self.offers.insert(id, o.clone());
 
+        ContractEvent::OfferCreated {
+            offer_id: id,
+            market_id,
+            is_long,
+            account_id,
+            amount: amount.into(),
+        }
+        .emit();
+
         o
     }
 
     #[payable]
-    pub fn accept_offer(&mut self, bid_id: u32) {
+    pub fn accept_offer(&mut self, offer_id: u32) {
         let amount = env::attached_deposit();
         require!(
             amount > 0,
@@ -210,7 +251,7 @@ impl Contract {
         );
         let amount: U128 = amount.into();
 
-        let o = self.offers.remove(&bid_id).unwrap_or_else(|| {
+        let o = self.offers.remove(&offer_id).unwrap_or_else(|| {
             env::panic_str("Offer does not exist. Maybe someone already accepted it?")
         });
 
@@ -228,6 +269,13 @@ impl Contract {
             .markets
             .get_mut(o.market_id)
             .unwrap_or_else(|| env::panic_str("Market no longer exists!"));
+
+        ContractEvent::OfferAccepted {
+            offer_id,
+            market_id: o.market_id,
+            account_id: predecessor.clone(),
+        }
+        .emit();
 
         let (long, short) = if o.is_long {
             (o.account_id, predecessor)

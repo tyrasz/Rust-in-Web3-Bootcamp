@@ -1,13 +1,13 @@
 // import { setupCoin98Wallet } from "@near-wallet-selector/coin98-wallet";
-import type { AccountState, WalletSelector } from "@near-wallet-selector/core";
-import { setupWalletSelector } from "@near-wallet-selector/core";
+import type { AccountState, WalletSelector } from '@near-wallet-selector/core';
+import { setupWalletSelector } from '@near-wallet-selector/core';
 // import { setupHereWallet } from "@near-wallet-selector/here-wallet";
 // import { setupMathWallet } from "@near-wallet-selector/math-wallet";
 // import { setupMeteorWallet } from "@near-wallet-selector/meteor-wallet";
 // import { setupNarwallets } from "@near-wallet-selector/narwallets";
-import type { WalletSelectorModal } from "@near-wallet-selector/modal-ui";
-import { setupModal } from "@near-wallet-selector/modal-ui";
-import { setupNearWallet } from "@near-wallet-selector/near-wallet";
+import type { WalletSelectorModal } from '@near-wallet-selector/modal-ui';
+import { setupModal } from '@near-wallet-selector/modal-ui';
+import { setupNearWallet } from '@near-wallet-selector/near-wallet';
 // import { setupNearFi } from "@near-wallet-selector/nearfi";
 // import { setupNightly } from "@near-wallet-selector/nightly";
 // import { setupNightlyConnect } from "@near-wallet-selector/nightly-connect";
@@ -16,17 +16,17 @@ import { setupNearWallet } from "@near-wallet-selector/near-wallet";
 // import { setupNearSnap } from "@near-wallet-selector/near-snap";
 // import { setupWelldoneWallet } from "@near-wallet-selector/welldone-wallet";
 // import { setupXDEFI } from "@near-wallet-selector/xdefi";
-import type { ReactNode } from "react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { distinctUntilChanged, map } from "rxjs";
+import type { ReactNode } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { distinctUntilChanged, map } from 'rxjs';
 
 // import { setupNeth } from "@near-wallet-selector/neth";
 // import { setupOptoWallet } from "@near-wallet-selector/opto-wallet";
 // import { setupFinerWallet } from "@near-wallet-selector/finer-wallet";
-import { Loading } from "../components/Loading";
+import { Loading } from '../components/Loading';
 // import { setupMyNearWallet } from "@near-wallet-selector/my-near-wallet";
 // import { setupLedger } from "@near-wallet-selector/ledger";
-import { CONTRACT_ID } from "../constants";
+import { CONTRACT_ID } from '../constants';
 
 declare global {
   interface Window {
@@ -54,7 +54,7 @@ export const WalletSelectorContextProvider: React.FC<{
 
   const init = useCallback(async () => {
     const _selector = await setupWalletSelector({
-      network: "testnet",
+      network: 'testnet',
       debug: true,
       modules: [
         // setupMyNearWallet(),
@@ -113,7 +113,7 @@ export const WalletSelectorContextProvider: React.FC<{
   useEffect(() => {
     init().catch((err) => {
       console.error(err);
-      alert("Failed to initialise wallet selector");
+      alert('Failed to initialise wallet selector');
     });
   }, [init]);
 
@@ -125,15 +125,15 @@ export const WalletSelectorContextProvider: React.FC<{
     const subscription = selector.store.observable
       .pipe(
         map((state) => state.accounts),
-        distinctUntilChanged()
+        distinctUntilChanged(),
       )
       .subscribe((nextAccounts) => {
-        console.log("Accounts Update", nextAccounts);
+        console.log('Accounts Update', nextAccounts);
 
         setAccounts(nextAccounts);
       });
 
-    const onHideSubscription = modal!.on("onHide", ({ hideReason }) => {
+    const onHideSubscription = modal!.on('onHide', ({ hideReason }) => {
       console.log(`The reason for hiding the modal ${hideReason}`);
     });
 
@@ -169,7 +169,7 @@ export function useWalletSelector() {
 
   if (!context) {
     throw new Error(
-      "useWalletSelector must be used within a WalletSelectorContextProvider"
+      'useWalletSelector must be used within a WalletSelectorContextProvider',
     );
   }
 

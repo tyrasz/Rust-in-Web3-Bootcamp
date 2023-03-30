@@ -2,6 +2,7 @@
 authors = ["Jacob Lindahl <jacob.lindahl@near.org>"]
 edition = "2021"
 name = "near-smart-contract-rust-template"
+publish = false
 version = "0.1.0"
 
 [dependencies]
