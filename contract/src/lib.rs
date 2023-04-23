@@ -5,7 +5,7 @@ use near_sdk::{
     near_bindgen, require,
     serde::{Deserialize, Serialize},
     store::*,
-    AccountId, BorshStorageKey, Promise, PanicOnDefault,
+    AccountId, BorshStorageKey, PanicOnDefault, Promise,
 };
 use near_sdk_contract_tools::{event, standard::nep297::Event};
 
@@ -14,6 +14,7 @@ use near_sdk_contract_tools::{event, standard::nep297::Event};
     version = "0.1.0",
     serde = "near_sdk::serde"
 )]
+
 enum ContractEvent {
     MarketCreated {
         market_id: u32,
@@ -34,8 +35,16 @@ enum ContractEvent {
     MarketClosed {
         market_id: u32,
     },
-    // TODO: Events for credits and withdrawals
+    Credits {
+        account_id: AccountId,
+        amount: U128,
+    },
+    Withdrawals {
+        account_id: AccountId,
+        amount: U128,
+    },
 }
+    // TODO: Events for credits and withdrawals
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 struct Market {
@@ -96,10 +105,11 @@ pub struct Contract {
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKey {
-    Markets,
-    Offers,
-    Credit,
+    Markets(u32),
+    Offers(u32),
+    Credit(u32),
     MarketShares(u32),
+    Withdrawals(u32),
 }
 
 #[near_bindgen]
