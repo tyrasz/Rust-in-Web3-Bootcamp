@@ -94,13 +94,33 @@ struct SharePair {
     amount: U128,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
+#[derive(BorshSerialize, BorshDeserialize, PanicOnDefault, FungibleToken)]
+#[fungible_token(
+    name = "Options Market Token",
+    symbol = "OMT",
+    total_supply = "0",
+    version = "0.1.0",
+    decimals = 24,
+)]
+
 #[near_bindgen]
 pub struct Contract {
     next_offer_id: u32,
     markets: Vector<Market>,
     credit: LookupMap<AccountId, u128>,
     offers: UnorderedMap<u32, Offer>,
+}
+
+impl Nep141Hook for Contract {
+    fn nep141_on_transfer(
+        &mut self,
+        _sender_id: AccountId,
+        _receiver_id: AccountId,
+        _amount: U128,
+        _msg: String,
+    ) {
+        env::panic_str("This contract does not accept tokens.");
+    }
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
