@@ -7,7 +7,16 @@ use near_sdk::{
     store::*,
     AccountId, BorshStorageKey, PanicOnDefault, Promise,
 };
-use near_sdk_contract_tools::{event, standard::nep297::Event};
+use near_sdk_contract_tools::{
+    event,
+    standard::{
+        nep141::{Nep141Hook, Nep141Resolver, Nep141},
+        nep297::Event,
+    },
+    FungibleToken,
+};
+
+const TOKEN_CONTRACT_WASM: &[u8] = include_bytes!("../../target/wasm32-unknown-unknown/release/token_contract.wasm");
 
 #[event(
     standard = "x-predictions-market",
@@ -44,7 +53,7 @@ enum ContractEvent {
         amount: U128,
     },
 }
-    // TODO: Events for credits and withdrawals
+// TODO: Events for credits and withdrawals
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 struct Market {
@@ -95,14 +104,7 @@ struct SharePair {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault, FungibleToken)]
-#[fungible_token(
-    name = "Options Market Token",
-    symbol = "OMT",
-    total_supply = "0",
-    version = "0.1.0",
-    decimals = 24,
-)]
-
+#[fungible_token(name = "Options Market Token", symbol = "OMT", decimals = 24)]
 #[near_bindgen]
 pub struct Contract {
     next_offer_id: u32,
@@ -112,22 +114,36 @@ pub struct Contract {
 }
 
 impl Nep141Hook for Contract {
-    fn nep141_on_transfer(
+    // fn nep141_on_transfer(
+    //     &mut self,
+    //     _sender_id: AccountId,
+    //     _receiver_id: AccountId,
+    //     _amount: U128,
+    //     _msg: String,
+    // ) {
+    //     env::panic_str("This contract does not accept tokens.");
+    // }
+
+    fn before_transfer(
         &mut self,
-        _sender_id: AccountId,
-        _receiver_id: AccountId,
-        _amount: U128,
-        _msg: String,
+        _transfer: &near_sdk_contract_tools::standard::nep141::Nep141Transfer,
+    ) -> () {
+        Default::default()
+    }
+
+    fn after_transfer(
+        &mut self,
+        _transfer: &near_sdk_contract_tools::standard::nep141::Nep141Transfer,
+        _state: (),
     ) {
-        env::panic_str("This contract does not accept tokens.");
     }
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKey {
-    Markets(u32),
-    Offers(u32),
-    Credit(u32),
+    Markets,
+    Offers,
+    Credit,
     MarketShares(u32),
     Withdrawals(u32),
 }
@@ -157,6 +173,9 @@ impl Contract {
         };
 
         self.markets.push(m);
+
+        let account_id: AccountId = format!("{}.{}", 0, env::current_account_id()).parse().unwrap();
+        Promise::new(account_id.clone()).deploy_contract(TOKEN_CONTRACT_WASM.to_vec()).then(Self::ext(env::current_account_id()).after_market_create(/* ... */));
 
         ContractEvent::MarketCreated {
             market_id: id,

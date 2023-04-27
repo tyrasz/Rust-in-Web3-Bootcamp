@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "./contract",
+  "./token-contract",
 ]
 
 [profile.release]

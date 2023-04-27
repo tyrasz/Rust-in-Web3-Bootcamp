@@ -659,6 +659,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "market-contract"
+version = "0.1.0"
+dependencies = [
+ "near-contract-standards",
+ "near-sdk",
+ "near-sdk-contract-tools",
+ "thiserror",
+]
+
+[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -862,16 +872,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "near-smart-contract-rust-template"
-version = "0.1.0"
-dependencies = [
- "near-contract-standards",
- "near-sdk",
- "near-sdk-contract-tools",
- "thiserror",
 ]
 
 [[package]]
@@ -1459,6 +1459,16 @@ dependencies = [
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
  "winapi",
+]
+
+[[package]]
+name = "token-contract"
+version = "0.1.0"
+dependencies = [
+ "near-contract-standards",
+ "near-sdk",
+ "near-sdk-contract-tools",
+ "thiserror",
 ]
 
 [[package]]
