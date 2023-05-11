@@ -81,20 +81,19 @@ impl Contract {
     }
 
     pub fn mint_tokens(&mut self, account_id: AccountId, amount: U128) {
-        self.assert_owner_calling();
+        self.assert_owner_or_market_calling();
         self.token.internal_deposit(&account_id, amount.into());
     }
     
     pub fn burn_tokens(&mut self, account_id: AccountId, amount: U128) {
-        self.assert_owner_calling();
+        self.assert_owner_or_market_calling();
         self.token.internal_withdraw(&account_id, amount.into());
     }
     
-    fn assert_owner_calling(&self) {
-        assert_eq!(
-            &env::predecessor_account_id(),
-            &self.owner_id,
-            "Only the owner can call this function."
+    fn assert_owner_or_market_calling(&self) {
+        assert!(
+            &env::predecessor_account_id() == &self.owner_id || &env::predecessor_account_id() == "market.contract", // replace "market.contract" with the account id of your market contract
+            "Only the owner or the market contract can call this function."
         );
     }
     

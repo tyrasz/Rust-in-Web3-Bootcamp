@@ -53,15 +53,16 @@ enum ContractEvent {
         amount: U128,
     },
 }
-// TODO: Events for credits and withdrawals
+
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
-struct Market {
+pub struct Market {
     id: u32,
     is_open: bool,
     description: String,
     owner: AccountId,
     shares: Vector<SharePair>,
+    token_contract: AccountId,  // add this field
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug, Clone)]
@@ -160,7 +161,7 @@ impl Contract {
         }
     }
 
-    pub fn create_market(&mut self, description: String) -> ViewMarket {
+    pub fn create_market(&mut self, description: String, outcomes: Vec<String>, token_contract: AccountId) -> ViewMarket {
         let id = self.markets.len();
         let owner = env::predecessor_account_id();
 
@@ -172,8 +173,20 @@ impl Contract {
             shares: Vector::new(StorageKey::MarketShares(id)),
         };
 
-        self.markets.push(m);
+        // Mint tokens
+        let promise = Promise::new(token_contract.clone())
+            .function_call(
+                "mint_tokens".into(),
+                format!("{{\"account_id\": \"{}\", \"amount\": \"{}\"}}", env::current_account_id(), total_supply).into_bytes(),
+                0,
+                GAS_FOR_MINT_AND_BURN,
+            );
 
+        self.markets.insert(&market_id, &Market {
+            // ...
+            token_contract,
+        });  
+        
         let account_id: AccountId = format!("{}.{}", 0, env::current_account_id()).parse().unwrap();
         Promise::new(account_id.clone()).deploy_contract(TOKEN_CONTRACT_WASM.to_vec()).then(Self::ext(env::current_account_id()).after_market_create(/* ... */));
 
@@ -229,6 +242,14 @@ impl Contract {
             .collect::<Vec<_>>();
 
         ContractEvent::MarketClosed { market_id }.emit();
+
+        let promise = Promise::new(market.token_contract.clone())
+            .function_call(
+                "burn_tokens".into(),
+                format!("{{\"account_id\": \"{}\", \"amount\": \"{}\"}}", env::current_account_id(), total_supply).into_bytes(),
+                0,
+                GAS_FOR_MINT_AND_BURN,
+            );
 
         drop(market);
 
@@ -338,4 +359,6 @@ impl Contract {
             amount: o.amount,
         });
     }
+
+
 }
